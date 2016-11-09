@@ -1,0 +1,6 @@
+[package]
+name = "dy-weekly-generator"
+version = "0.1.0"
+authors = ["android"]
+
+[dependencies]
