@@ -1,6 +1,7 @@
 [package]
 name = "dy-weekly-generator"
 version = "0.1.0"
-authors = ["android"]
+authors = ["codeworm96 <codeworm96@outlook.com>"]
 
 [dependencies]
+
