@@ -1,0 +1,33 @@
+name: dy-weekly-generator
+version: 0.1.0
+author: codeworm96 <codeworm96@outlook.com>
+about: Generates dy weekly
+args:
+  - file:
+      short: o
+      long: output
+      value_name: file
+      help: The final weekly file
+      takes_value: true
+      required: true
+  - repo:
+      short: r
+      long: repo
+      value_name: repo
+      help: The github repo, like 'dyweb/weekly'
+      takes_value: true
+      required: true
+  - issue:
+      short: i
+      long: issue
+      value_name: issue
+      help: The issue id
+      takes_value: true
+      required: true
+  - key:
+      short: k
+      long: key
+      value_name: key
+      help: The github api key
+      takes_value: true
+      required: true
