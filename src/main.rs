@@ -2,6 +2,9 @@
 extern crate clap;
 use clap::App;
 
+use std::io::prelude::*;
+use std::fs::File;
+
 #[derive(Debug)]
 struct Config {
     file: String,
@@ -12,6 +15,7 @@ struct Config {
 
 enum WeeklyErr {
     ConfigErr,
+    IOErr,
 }
 
 fn parse_args() -> Result<Config, WeeklyErr> {
@@ -31,13 +35,32 @@ fn parse_args() -> Result<Config, WeeklyErr> {
     })
 }
 
+fn fetch(config: &Config) -> Result<String, WeeklyErr> {
+    Ok(config.key.clone())
+}
+
+fn render(comments: String) -> Result<String, WeeklyErr> {
+    Ok(comments)
+}
+
+fn save(config: &Config, weekly: String) -> Result<(), WeeklyErr> {
+    let mut file = try!(File::create(config.file.clone()).map_err(|_| { WeeklyErr::IOErr }));
+    try!(write!(file, "{}", weekly).map_err(|_| { WeeklyErr::IOErr }));
+    Ok(())
+}
+
+fn work() -> Result<(), WeeklyErr> {
+    let config = try!(parse_args());
+    let comments = try!(fetch(&config));
+    let weekly = try!(render(comments));
+    try!(save(&config, weekly));
+    Ok(())
+}
+
 fn main() {
-    let config = match parse_args() {
-        Ok(c) => c,
-        Err(_) => {
-            println!("Invalid arguments!");
-            return;
-        }
+    match work() {
+        Err(WeeklyErr::ConfigErr) => println!("Invalid arguments!"),
+        Err(WeeklyErr::IOErr) => println!("Error while file operations"),
+        Ok(_) => {}
     };
-    println!("{:?}", config);
 }
