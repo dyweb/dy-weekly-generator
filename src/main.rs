@@ -7,6 +7,8 @@ use hyper::client::Client;
 use hyper::header::{Headers, Accept, Authorization, UserAgent, qitem};
 use hyper::mime::Mime;
 
+extern crate json;
+
 use std::io::prelude::*;
 use std::fs::File;
 
@@ -24,6 +26,7 @@ enum WeeklyErr {
     ConfigErr,
     RequestErr(hyper::error::Error),
     FetchErr,
+    JsonParseErr,
     IOErr,
 }
 
@@ -71,13 +74,35 @@ fn fetch(config: &Config) -> Result<String, WeeklyErr> {
     }
 }
 
-fn render(comments: String) -> Result<String, WeeklyErr> {
-    Ok(comments)
+fn render_entry(comment: String) -> Option<String> {
+    Some(comment)
 }
 
-fn save(config: &Config, weekly: String) -> Result<(), WeeklyErr> {
+fn render(comments: String) -> Result<Vec<String>, WeeklyErr> {
+    let comment_list = try!(json::parse(&comments).map_err(|_| { WeeklyErr::JsonParseErr }));  
+    match comment_list {
+        json::JsonValue::Array(cs) => {
+            let mut res = Vec::new();
+            for c in &cs {
+                let body = &c["body"];
+                if body.is_string() {
+                    match render_entry(body.to_string()) {
+                        Some(e) => res.push(e),
+                        None => {}
+                    }
+                }
+            }
+            Ok(res)
+        }
+        _ => Err(WeeklyErr::JsonParseErr),
+    }
+}
+
+fn save(config: &Config, weekly: Vec<String>) -> Result<(), WeeklyErr> {
     let mut file = try!(File::create(config.file.clone()).map_err(|_| { WeeklyErr::IOErr }));
-    try!(write!(file, "{}", weekly).map_err(|_| { WeeklyErr::IOErr }));
+    for entry in &weekly {
+        try!(write!(file, "{}", entry).map_err(|_| { WeeklyErr::IOErr }));
+    }
     Ok(())
 }
 
@@ -94,6 +119,7 @@ fn main() {
         Err(WeeklyErr::ConfigErr) => println!("Invalid arguments!"),
         Err(WeeklyErr::RequestErr(e)) => println!("Error while sending request ({:?})", e),
         Err(WeeklyErr::FetchErr) => println!("Error while fetching"),
+        Err(WeeklyErr::JsonParseErr) => println!("Invalid json"),
         Err(WeeklyErr::IOErr) => println!("Error while file operations"),
         Ok(_) => {}
     };
