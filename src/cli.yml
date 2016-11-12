@@ -30,4 +30,3 @@ args:
       value_name: key
       help: The github api key
       takes_value: true
-      required: true

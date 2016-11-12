@@ -2,5 +2,6 @@
 
 ## Roadmap
 - [X] Parse cmdline arguments
-- [ ] Fetch comments
-- [ ] Render weekly to file
+- [X] Fetch comments
+- [ ] Render weekly
+- [X] Save weekly in file
