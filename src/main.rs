@@ -1,3 +1,8 @@
+extern crate yaml_rust;
+
+mod weekly;
+use weekly::Weekly;
+
 #[macro_use]
 extern crate clap;
 use clap::App;
@@ -22,21 +27,13 @@ struct Config {
     key: Option<String>,
 }
 
-enum WeeklyErr {
-    ConfigErr,
-    RequestErr(hyper::error::Error),
-    FetchErr,
-    JsonParseErr,
-    IOErr,
-}
-
-fn parse_args() -> Result<Config, WeeklyErr> {
+fn parse_args() -> Result<Config, weekly::Error> {
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
 
-    let file = try!(matches.value_of("file").ok_or(WeeklyErr::ConfigErr));
-    let repo = try!(matches.value_of("repo").ok_or(WeeklyErr::ConfigErr));
-    let issue = try!(matches.value_of("issue").ok_or(WeeklyErr::ConfigErr));
+    let file = try!(matches.value_of("file").ok_or(weekly::Error::ConfigErr));
+    let repo = try!(matches.value_of("repo").ok_or(weekly::Error::ConfigErr));
+    let issue = try!(matches.value_of("issue").ok_or(weekly::Error::ConfigErr));
     let key = matches.value_of("key");
 
     Ok(Config {
@@ -47,7 +44,7 @@ fn parse_args() -> Result<Config, WeeklyErr> {
     })
 }
 
-fn fetch(config: &Config) -> Result<String, WeeklyErr> {
+fn fetch(config: &Config) -> Result<String, weekly::Error> {
     let client = Client::new();
     let url = format!("{}/repos/{}/issues/{}/comments", API_ROOT, config.repo, config.issue);
 
@@ -63,64 +60,70 @@ fn fetch(config: &Config) -> Result<String, WeeklyErr> {
     let mut res = try!(client.get(&url)
                        .headers(headers)
                        .send()
-                       .map_err(|e| { WeeklyErr::RequestErr(e) }));
+                       .map_err(|e| { weekly::Error::RequestErr(e) }));
 
     if res.status != hyper::Ok {
-        Err(WeeklyErr::FetchErr)
+        Err(weekly::Error::FetchErr)
     } else {
         let mut content = String::new();
-        try!(res.read_to_string(&mut content).map_err(|_| { WeeklyErr::FetchErr }));
+        try!(res.read_to_string(&mut content).map_err(|_| { weekly::Error::FetchErr }));
         Ok(content)
     }
 }
 
-fn render_entry(comment: String) -> Option<String> {
-    Some(comment)
+fn parse_comment(weekly: &mut Weekly, comment: &str) {
+    let mut entry = String::new();
+    let mut in_yaml = false;
+    for line in comment.lines() {
+        if line == "```yaml" {
+            entry = String::new();
+            in_yaml = true;
+        } else if line == "```" {
+            weekly.parse(&entry);
+            in_yaml = false;
+        } else if in_yaml {
+            entry.push_str(line);
+            entry.push_str("\n");
+        }
+    }
 }
 
-fn render(comments: String) -> Result<Vec<String>, WeeklyErr> {
-    let comment_list = try!(json::parse(&comments).map_err(|_| { WeeklyErr::JsonParseErr }));  
+fn parse(comments: String) -> Result<Weekly, weekly::Error> {
+    let comment_list = try!(json::parse(&comments).map_err(|_| { weekly::Error::JsonParseErr }));  
+    let mut weekly = Weekly::new();
     match comment_list {
         json::JsonValue::Array(cs) => {
-            let mut res = Vec::new();
             for c in &cs {
-                let body = &c["body"];
-                if body.is_string() {
-                    match render_entry(body.to_string()) {
-                        Some(e) => res.push(e),
-                        None => {}
-                    }
+                if let Some(body) = c["body"].as_str() {
+                    parse_comment(&mut weekly, body); 
                 }
             }
-            Ok(res)
+            Ok(weekly)
         }
-        _ => Err(WeeklyErr::JsonParseErr),
+        _ => Err(weekly::Error::JsonParseErr),
     }
 }
 
-fn save(config: &Config, weekly: Vec<String>) -> Result<(), WeeklyErr> {
-    let mut file = try!(File::create(config.file.clone()).map_err(|_| { WeeklyErr::IOErr }));
-    for entry in &weekly {
-        try!(write!(file, "{}", entry).map_err(|_| { WeeklyErr::IOErr }));
-    }
-    Ok(())
+fn render(config: &Config, weekly: Weekly) -> Result<(), weekly::Error> {
+    let file = try!(File::create(config.file.clone()).map_err(|_| { weekly::Error::IOErr }));
+    weekly.render(file)
 }
 
-fn work() -> Result<(), WeeklyErr> {
+fn work() -> Result<(), weekly::Error> {
     let config = try!(parse_args());
     let comments = try!(fetch(&config));
-    let weekly = try!(render(comments));
-    try!(save(&config, weekly));
+    let weekly = try!(parse(comments));
+    try!(render(&config, weekly));
     Ok(())
 }
 
 fn main() {
     match work() {
-        Err(WeeklyErr::ConfigErr) => println!("Invalid arguments!"),
-        Err(WeeklyErr::RequestErr(e)) => println!("Error while sending request ({:?})", e),
-        Err(WeeklyErr::FetchErr) => println!("Error while fetching"),
-        Err(WeeklyErr::JsonParseErr) => println!("Invalid json"),
-        Err(WeeklyErr::IOErr) => println!("Error while file operations"),
+        Err(weekly::Error::ConfigErr) => println!("Invalid arguments!"),
+        Err(weekly::Error::RequestErr(e)) => println!("Error while sending request ({:?})", e),
+        Err(weekly::Error::FetchErr) => println!("Error while fetching"),
+        Err(weekly::Error::JsonParseErr) => println!("Invalid json"),
+        Err(weekly::Error::IOErr) => println!("Error while file operations"),
         Ok(_) => {}
     };
 }
