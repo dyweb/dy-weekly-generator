@@ -1,5 +1,8 @@
 extern crate yaml_rust;
 
+extern crate regex;
+use regex::Regex;
+
 mod weekly;
 use weekly::Weekly;
 
@@ -72,13 +75,15 @@ fn fetch(config: &Config) -> Result<String, weekly::Error> {
 }
 
 fn parse_comment(weekly: &mut Weekly, comment: &str) {
+    let begin = Regex::new(r"```[:space:]*yaml").unwrap();
+    let end = Regex::new(r"```").unwrap();
     let mut entry = String::new();
     let mut in_yaml = false;
     for line in comment.lines() {
-        if line == "```yaml" {
+        if begin.is_match(line) {
             entry = String::new();
             in_yaml = true;
-        } else if line == "```" {
+        } else if end.is_match(line) {
             weekly.parse(&entry);
             in_yaml = false;
         } else if in_yaml {
