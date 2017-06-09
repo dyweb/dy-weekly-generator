@@ -157,6 +157,16 @@ impl Weekly {
     }
 
     pub fn render(&self, mut file: File) -> Result<(), Error> {
+        let header = r#"---
+layout: post
+title: Weekly
+category: Weekly
+author: 东岳
+
+---
+
+"#;
+        try!(write!(file, "{}", header).map_err(|_| { Error::IOErr }));
         for entry in self.entries.values() {
             try!(entry.render(&mut file));
         }
