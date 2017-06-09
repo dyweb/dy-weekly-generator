@@ -44,12 +44,32 @@ impl Entry {
                 let link = doc["link"].as_str().map(|s| { s.to_string() });
                 let description = doc["description"].as_str().map(|s| { s.to_string() });
                 let quote = doc["quote"].as_str().map(|s| { s.to_string() });
+
                 let mut cc = Vec::new();
-                for person in doc["cc"].as_vec().unwrap_or(&Vec::new()) {
-                    match person.as_str() {
-                        Some(c) => cc.push(c.to_string()),
-                        None => {}
+                if let Some(raw_cc) = doc["cc"].as_vec() {
+                    for person in raw_cc {
+                        match person.as_str() {
+                            Some(c) => cc.push(c.to_string()),
+                            None => {}
+                        }
                     }
+                } else {
+                    doc["cc"].as_str()
+                        .map(|s| { format!("[{}]", s) })
+                        .and_then(|s| {
+                            YamlLoader::load_from_str(&s).ok().and_then(|ds| {
+                                ds.iter().next()
+                                    .and_then(|d| { d.as_vec() })
+                                    .map(|v| {
+                                    for person in v {
+                                        match person.as_str() {
+                                            Some(c) => cc.extend(c.split(' ').map(|s| s.to_string())),
+                                            None => {}
+                                        }
+                                    }
+                                })
+                            })
+                        });
                 }
 
                 match (name, kind) {
@@ -66,7 +86,7 @@ impl Entry {
             })
         })
     }
-    
+
     fn field_append(a: &mut Option<String>, b: &mut Option<String>) {
         match mem::replace(b, None) {
             Some(s2) => {
@@ -108,7 +128,7 @@ impl Entry {
             None => {}
         }
         if self.cc.len() > 0 {
-            let cc_list: Vec<_> = self.cc.iter().map(|person| { format!("[@{}][{}]", person, person) }).collect();
+            let cc_list: Vec<_> = self.cc.iter().map(|person| { format!("[@{}](https://github.com/{})", person, person) }).collect();
             try!(write!(file, "{}\n", cc_list.join(", ")).map_err(|_| { Error::IOErr }));
         }
         Ok(())
