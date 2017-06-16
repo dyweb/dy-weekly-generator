@@ -75,7 +75,8 @@ fn fetch(config: &Config) -> Result<String, weekly::Error> {
 }
 
 fn parse_comment(weekly: &mut Weekly, comment: &str) {
-    let begin = Regex::new(r"```[:space:]*yaml").unwrap();
+    println!("{}", comment); // dump comments for manual editing
+    let begin = Regex::new(r"```[:space:]*(yaml|yml)").unwrap();
     let end = Regex::new(r"```").unwrap();
     let mut entry = String::new();
     let mut in_yaml = false;
