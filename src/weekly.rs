@@ -110,26 +110,26 @@ impl Entry {
     }
 
     fn render(&self, file: &mut File) -> Result<(), Error> {
-        try!(write!(file, "- ").map_err(|_| { Error::IOErr }));
+        write!(file, "- ").map_err(|_| { Error::IOErr })?;
         match self.link.as_ref() {
-            Some(link) => try!(write!(file, "[{}]({})", self.name, link).map_err(|_| { Error::IOErr })),
-            None => try!(write!(file, "{}", self.name).map_err(|_| { Error::IOErr })),
+            Some(link) => write!(file, "[{}]({})", self.name, link).map_err(|_| { Error::IOErr })?,
+            None => write!(file, "{}", self.name).map_err(|_| { Error::IOErr })?,
         }
         match self.description.as_ref() {
-            Some(desc) => try!(write!(file, ", {}\n", desc).map_err(|_| { Error::IOErr })),
-            None => try!(write!(file, "\n").map_err(|_| { Error::IOErr })),
+            Some(desc) => write!(file, ", {}\n", desc).map_err(|_| { Error::IOErr })?,
+            None => write!(file, "\n").map_err(|_| { Error::IOErr })?,
         }
         match self.quote.as_ref() {
             Some(quote) => {
                 for line in quote.lines() {
-                    try!(write!(file, " > {}\n", line).map_err(|_| { Error::IOErr }));
+                    write!(file, " > {}\n", line).map_err(|_| { Error::IOErr })?;
                 }
             }
             None => {}
         }
         if self.cc.len() > 0 {
             let cc_list: Vec<_> = self.cc.iter().map(|person| { format!("[@{}](https://github.com/{})", person, person) }).collect();
-            try!(write!(file, "{}\n", cc_list.join(", ")).map_err(|_| { Error::IOErr }));
+            write!(file, "{}\n", cc_list.join(", ")).map_err(|_| { Error::IOErr })?;
         }
         Ok(())
     }
@@ -166,9 +166,9 @@ author: 东岳
 ---
 
 "#;
-        try!(write!(file, "{}", header).map_err(|_| { Error::IOErr }));
+        write!(file, "{}", header).map_err(|_| { Error::IOErr })?;
         for entry in self.entries.values() {
-            try!(entry.render(&mut file));
+            entry.render(&mut file)?;
         }
         Ok(())
     }
