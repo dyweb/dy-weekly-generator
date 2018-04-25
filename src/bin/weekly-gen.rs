@@ -9,14 +9,14 @@ extern crate clap;
 use clap::App;
 
 extern crate reqwest;
-use reqwest::Client;
-use reqwest::header::{Headers, Accept, Authorization, UserAgent, qitem};
+use reqwest::header::{qitem, Accept, Authorization, Headers, UserAgent};
 use reqwest::mime::Mime;
+use reqwest::Client;
 
 extern crate json;
 
-use std::io::prelude::*;
 use std::fs::File;
+use std::io::prelude::*;
 
 const API_ROOT: &'static str = "https://api.github.com";
 
@@ -41,13 +41,16 @@ fn parse_args() -> Result<Config, weekly::Error> {
         file: file.to_string(),
         repo: repo.to_string(),
         issue: issue.to_string(),
-        key: key.map(|k| { k.to_string() }),
+        key: key.map(|k| k.to_string()),
     })
 }
 
 fn fetch(config: &Config) -> Result<String, weekly::Error> {
     let client = Client::new();
-    let url = format!("{}/repos/{}/issues/{}/comments", API_ROOT, config.repo, config.issue);
+    let url = format!(
+        "{}/repos/{}/issues/{}/comments",
+        API_ROOT, config.repo, config.issue
+    );
 
     let mut headers = Headers::new();
     let accept_mime: Mime = "application/vnd.github.v3+json".parse().unwrap();
@@ -58,16 +61,18 @@ fn fetch(config: &Config) -> Result<String, weekly::Error> {
         None => {}
     }
 
-    let mut res = client.get(&url)
-                    .headers(headers)
-                    .send()
-                    .map_err(|e| { weekly::Error::RequestErr(e) })?;
+    let mut res = client
+        .get(&url)
+        .headers(headers)
+        .send()
+        .map_err(|e| weekly::Error::RequestErr(e))?;
 
     if res.status() != reqwest::StatusCode::Ok {
         Err(weekly::Error::FetchErr)
     } else {
         let mut content = String::new();
-        res.read_to_string(&mut content).map_err(|_| { weekly::Error::FetchErr })?;
+        res.read_to_string(&mut content)
+            .map_err(|_| weekly::Error::FetchErr)?;
         Ok(content)
     }
 }
@@ -93,13 +98,13 @@ fn parse_comment(weekly: &mut Weekly, comment: &str) {
 }
 
 fn parse(comments: String) -> Result<Weekly, weekly::Error> {
-    let comment_list = json::parse(&comments).map_err(|_| { weekly::Error::JsonParseErr })?;
+    let comment_list = json::parse(&comments).map_err(|_| weekly::Error::JsonParseErr)?;
     let mut weekly = Weekly::new();
     match comment_list {
         json::JsonValue::Array(cs) => {
             for c in &cs {
                 if let Some(body) = c["body"].as_str() {
-                    parse_comment(&mut weekly, body); 
+                    parse_comment(&mut weekly, body);
                 }
             }
             Ok(weekly)
@@ -109,7 +114,7 @@ fn parse(comments: String) -> Result<Weekly, weekly::Error> {
 }
 
 fn render(config: &Config, weekly: Weekly) -> Result<(), weekly::Error> {
-    let file = File::create(config.file.clone()).map_err(|_| { weekly::Error::IOErr })?;
+    let file = File::create(config.file.clone()).map_err(|_| weekly::Error::IOErr)?;
     weekly.render(file)
 }
 
