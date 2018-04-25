@@ -10,10 +10,10 @@ use weekly::Weekly;
 extern crate clap;
 use clap::App;
 
-extern crate hyper;
-use hyper::client::Client;
-use hyper::header::{Headers, Accept, Authorization, UserAgent, qitem};
-use hyper::mime::Mime;
+extern crate reqwest;
+use reqwest::Client;
+use reqwest::header::{Headers, Accept, Authorization, UserAgent, qitem};
+use reqwest::mime::Mime;
 
 extern crate json;
 
@@ -54,7 +54,7 @@ fn fetch(config: &Config) -> Result<String, weekly::Error> {
     let mut headers = Headers::new();
     let accept_mime: Mime = "application/vnd.github.v3+json".parse().unwrap();
     headers.set(Accept(vec![qitem(accept_mime)]));
-    headers.set(UserAgent("dy-weekly-generator/0.0.1".to_string()));
+    headers.set(UserAgent::new("dy-weekly-generator/0.0.1".to_string()));
     match config.key {
         Some(ref k) => headers.set(Authorization(format!("token {}", k))),
         None => {}
@@ -65,7 +65,7 @@ fn fetch(config: &Config) -> Result<String, weekly::Error> {
                        .send()
                        .map_err(|e| { weekly::Error::RequestErr(e) }));
 
-    if res.status != hyper::Ok {
+    if res.status() != reqwest::StatusCode::Ok {
         Err(weekly::Error::FetchErr)
     } else {
         let mut content = String::new();

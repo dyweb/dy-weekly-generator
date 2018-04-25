@@ -4,11 +4,11 @@ use std::fs::File;
 use std::io::prelude::*;
 
 use yaml_rust::YamlLoader;
-use hyper;
+use reqwest;
 
 pub enum Error {
     ConfigErr,
-    RequestErr(hyper::error::Error),
+    RequestErr(reqwest::Error),
     FetchErr,
     JsonParseErr,
     IOErr,
