@@ -1,10 +1,8 @@
-extern crate yaml_rust;
-
 extern crate regex;
 use regex::Regex;
 
-mod weekly;
-use weekly::Weekly;
+extern crate dy_weekly_generator;
+use dy_weekly_generator::weekly::{self, Weekly};
 
 #[macro_use]
 extern crate clap;

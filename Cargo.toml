@@ -3,6 +3,9 @@ name = "dy-weekly-generator"
 version = "0.2.0"
 authors = ["codeworm96 <codeworm96@outlook.com>"]
 
+[[bin]]
+name = "weekly-gen"
+
 [dependencies]
 clap = {version = "2", features = ["yaml"]}
 reqwest = "0.8"
