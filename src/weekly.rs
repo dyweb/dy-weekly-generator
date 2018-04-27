@@ -3,16 +3,9 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::mem;
 
-use reqwest;
 use yaml_rust::YamlLoader;
 
-pub enum Error {
-    ConfigErr,
-    RequestErr(reqwest::Error),
-    FetchErr,
-    JsonParseErr,
-    IOErr,
-}
+use error::Error;
 
 enum EntryType {
     Draft,

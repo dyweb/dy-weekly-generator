@@ -2,7 +2,8 @@ extern crate regex;
 use regex::Regex;
 
 extern crate dy_weekly_generator;
-use dy_weekly_generator::weekly::{self, Weekly};
+use dy_weekly_generator::error::Error;
+use dy_weekly_generator::weekly::Weekly;
 
 #[macro_use]
 extern crate clap;
@@ -28,13 +29,13 @@ struct Config {
     key: Option<String>,
 }
 
-fn parse_args() -> Result<Config, weekly::Error> {
+fn parse_args() -> Result<Config, Error> {
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
 
-    let file = matches.value_of("file").ok_or(weekly::Error::ConfigErr)?;
-    let repo = matches.value_of("repo").ok_or(weekly::Error::ConfigErr)?;
-    let issue = matches.value_of("issue").ok_or(weekly::Error::ConfigErr)?;
+    let file = matches.value_of("file").ok_or(Error::ConfigErr)?;
+    let repo = matches.value_of("repo").ok_or(Error::ConfigErr)?;
+    let issue = matches.value_of("issue").ok_or(Error::ConfigErr)?;
     let key = matches.value_of("key");
 
     Ok(Config {
@@ -45,7 +46,7 @@ fn parse_args() -> Result<Config, weekly::Error> {
     })
 }
 
-fn fetch(config: &Config) -> Result<String, weekly::Error> {
+fn fetch(config: &Config) -> Result<String, Error> {
     let client = Client::new();
     let url = format!(
         "{}/repos/{}/issues/{}/comments",
@@ -65,14 +66,14 @@ fn fetch(config: &Config) -> Result<String, weekly::Error> {
         .get(&url)
         .headers(headers)
         .send()
-        .map_err(|e| weekly::Error::RequestErr(e))?;
+        .map_err(|e| Error::RequestErr(e))?;
 
     if res.status() != reqwest::StatusCode::Ok {
-        Err(weekly::Error::FetchErr)
+        Err(Error::FetchErr)
     } else {
         let mut content = String::new();
         res.read_to_string(&mut content)
-            .map_err(|_| weekly::Error::FetchErr)?;
+            .map_err(|_| Error::FetchErr)?;
         Ok(content)
     }
 }
@@ -97,8 +98,8 @@ fn parse_comment(weekly: &mut Weekly, comment: &str) {
     }
 }
 
-fn parse(comments: String) -> Result<Weekly, weekly::Error> {
-    let comment_list = json::parse(&comments).map_err(|_| weekly::Error::JsonParseErr)?;
+fn parse(comments: String) -> Result<Weekly, Error> {
+    let comment_list = json::parse(&comments).map_err(|_| Error::JsonParseErr)?;
     let mut weekly = Weekly::new();
     match comment_list {
         json::JsonValue::Array(cs) => {
@@ -109,16 +110,16 @@ fn parse(comments: String) -> Result<Weekly, weekly::Error> {
             }
             Ok(weekly)
         }
-        _ => Err(weekly::Error::JsonParseErr),
+        _ => Err(Error::JsonParseErr),
     }
 }
 
-fn render(config: &Config, weekly: Weekly) -> Result<(), weekly::Error> {
-    let file = File::create(config.file.clone()).map_err(|_| weekly::Error::IOErr)?;
+fn render(config: &Config, weekly: Weekly) -> Result<(), Error> {
+    let file = File::create(config.file.clone()).map_err(|_| Error::IOErr)?;
     weekly.render(file)
 }
 
-fn work() -> Result<(), weekly::Error> {
+fn work() -> Result<(), Error> {
     let config = parse_args()?;
     let comments = fetch(&config)?;
     let weekly = parse(comments)?;
@@ -128,11 +129,11 @@ fn work() -> Result<(), weekly::Error> {
 
 fn main() {
     match work() {
-        Err(weekly::Error::ConfigErr) => println!("Invalid arguments!"),
-        Err(weekly::Error::RequestErr(e)) => println!("Error while sending request ({:?})", e),
-        Err(weekly::Error::FetchErr) => println!("Error while fetching"),
-        Err(weekly::Error::JsonParseErr) => println!("Invalid json"),
-        Err(weekly::Error::IOErr) => println!("Error while file operations"),
+        Err(Error::ConfigErr) => println!("Invalid arguments!"),
+        Err(Error::RequestErr(e)) => println!("Error while sending request ({:?})", e),
+        Err(Error::FetchErr) => println!("Error while fetching"),
+        Err(Error::JsonParseErr) => println!("Invalid json"),
+        Err(Error::IOErr) => println!("Error while file operations"),
         Ok(_) => {}
     };
 }
