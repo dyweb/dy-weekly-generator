@@ -3,23 +3,16 @@ use regex::Regex;
 
 extern crate dy_weekly_generator;
 use dy_weekly_generator::error::Error;
+use dy_weekly_generator::github;
 use dy_weekly_generator::weekly::Weekly;
 
 #[macro_use]
 extern crate clap;
 use clap::App;
 
-extern crate reqwest;
-use reqwest::header::{qitem, Accept, Authorization, Headers, UserAgent};
-use reqwest::mime::Mime;
-use reqwest::Client;
-
 extern crate json;
 
 use std::fs::File;
-use std::io::prelude::*;
-
-const API_ROOT: &'static str = "https://api.github.com";
 
 #[derive(Debug)]
 struct Config {
@@ -46,38 +39,6 @@ fn parse_args() -> Result<Config, Error> {
     })
 }
 
-fn fetch(config: &Config) -> Result<String, Error> {
-    let client = Client::new();
-    let url = format!(
-        "{}/repos/{}/issues/{}/comments",
-        API_ROOT, config.repo, config.issue
-    );
-
-    let mut headers = Headers::new();
-    let accept_mime: Mime = "application/vnd.github.v3+json".parse().unwrap();
-    headers.set(Accept(vec![qitem(accept_mime)]));
-    headers.set(UserAgent::new("dy-weekly-generator/0.2.0".to_string()));
-    match config.key {
-        Some(ref k) => headers.set(Authorization(format!("token {}", k))),
-        None => {}
-    }
-
-    let mut res = client
-        .get(&url)
-        .headers(headers)
-        .send()
-        .map_err(|e| Error::RequestErr(e))?;
-
-    if res.status() != reqwest::StatusCode::Ok {
-        Err(Error::FetchErr)
-    } else {
-        let mut content = String::new();
-        res.read_to_string(&mut content)
-            .map_err(|_| Error::FetchErr)?;
-        Ok(content)
-    }
-}
-
 fn parse_comment(weekly: &mut Weekly, comment: &str) {
     println!("{}", comment); // dump comments for manual editing
     let begin = Regex::new(r"```[:space:]*(yaml|yml)").unwrap();
@@ -98,20 +59,12 @@ fn parse_comment(weekly: &mut Weekly, comment: &str) {
     }
 }
 
-fn parse(comments: String) -> Result<Weekly, Error> {
-    let comment_list = json::parse(&comments).map_err(|_| Error::JsonParseErr)?;
+fn parse(comments: github::Comments) -> Weekly {
     let mut weekly = Weekly::new();
-    match comment_list {
-        json::JsonValue::Array(cs) => {
-            for c in &cs {
-                if let Some(body) = c["body"].as_str() {
-                    parse_comment(&mut weekly, body);
-                }
-            }
-            Ok(weekly)
-        }
-        _ => Err(Error::JsonParseErr),
+    for body in comments.iter() {
+        parse_comment(&mut weekly, body)
     }
+    weekly
 }
 
 fn render(config: &Config, weekly: Weekly) -> Result<(), Error> {
@@ -121,7 +74,7 @@ fn render(config: &Config, weekly: Weekly) -> Result<(), Error> {
 
 fn work() -> Result<(), Error> {
     let config = parse_args()?;
-    let comments = fetch(&config)?;
+    let comments = github::fetch(&config.repo, &config.issue, None)?;
     let weekly = parse(comments)?;
     render(&config, weekly)?;
     Ok(())
