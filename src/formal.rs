@@ -97,26 +97,26 @@ impl Entry {
     fn merge(&mut self, mut other: Entry) {
         assert_eq!(self.name, other.name);
         self.kind = other.kind;
-        Self::field_append(&mut self.link, &mut other.link);
+        Self::field_append(&mut self.link, &mut other.link); // FIXME: not a proper way to merge link
         Self::field_append(&mut self.description, &mut other.description);
         Self::field_append(&mut self.quote, &mut other.quote);
         self.cc.append(&mut other.cc);
     }
 
-    fn render(&self, file: &mut io::Write) -> Result<(), Error> {
-        write!(file, "- ")?;
+    fn render(&self, out: &mut io::Write) -> Result<(), Error> {
+        write!(out, "- ")?;
         match self.link.as_ref() {
-            Some(link) => write!(file, "[{}]({})", self.name, link)?,
-            None => write!(file, "{}", self.name)?,
+            Some(link) => write!(out, "[{}]({})", self.name, link)?,
+            None => write!(out, "{}", self.name)?,
         }
         match self.description.as_ref() {
-            Some(desc) => write!(file, ", {}\n", desc)?,
-            None => write!(file, "\n")?,
+            Some(desc) => write!(out, ", {}\n", desc)?,
+            None => write!(out, "\n")?,
         }
         match self.quote.as_ref() {
             Some(quote) => {
                 for line in quote.lines() {
-                    write!(file, " > {}\n", line)?;
+                    write!(out, " > {}\n", line)?;
                 }
             }
             None => {}
@@ -126,7 +126,7 @@ impl Entry {
                 .iter()
                 .map(|person| format!("[@{}](https://github.com/{})", person, person))
                 .collect();
-            write!(file, "{}\n", cc_list.join(", "))?;
+            write!(out, "{}\n", cc_list.join(", "))?;
         }
         Ok(())
     }
@@ -180,6 +180,7 @@ impl Extractor for Formal {
         }
         res
     }
+
     fn render(&self, out: &mut io::Write) -> Result<(), Error> {
         for entry in self.entries.values() {
             entry.render(out)?;

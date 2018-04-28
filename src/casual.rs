@@ -26,6 +26,7 @@ impl Extractor for Casual {
         }
         res
     }
+
     fn render(&self, out: &mut io::Write) -> Result<(), Error> {
         for entry in &self.entries {
             write!(out, "{}\n", entry)?

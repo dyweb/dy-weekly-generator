@@ -9,8 +9,6 @@ use dy_weekly_generator::weekly::WeeklyBuilder;
 extern crate clap;
 use clap::App;
 
-extern crate json;
-
 fn work() -> Result<(), Error> {
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
@@ -27,7 +25,7 @@ fn work() -> Result<(), Error> {
     for body in github::fetch(repo, issue, key)? {
         weekly.parse(&body);
     }
-    weekly.render(file);
+    weekly.render(file)
 }
 
 fn main() {
