@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io;
+use std::io::Write;
 
 use error::Error;
 
@@ -46,7 +47,17 @@ impl Weekly {
     }
 
     pub fn render(&self, file: &str) -> Result<(), Error> {
-        let file = File::create(file).map_err(|_| Error::IOErr)?;
+        let mut file = File::create(file).map_err(|_| Error::IOErr)?;
+        let header = r#"---
+layout: post
+title: Weekly
+category: Weekly
+author: 东岳
+
+---
+
+"#;
+        write!(file, "{}", header).map_err(|_| Error::IOErr)?;
         for extractor in &self.extractors {
             extractor.render(&file)
         }
