@@ -7,3 +7,4 @@ pub mod error;
 pub mod github;
 pub mod weekly;
 pub mod formal;
+pub mod casual;
