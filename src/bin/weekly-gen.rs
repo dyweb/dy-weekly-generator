@@ -1,9 +1,8 @@
-extern crate regex;
-
 extern crate dy_weekly_generator;
 use dy_weekly_generator::error::Error;
 use dy_weekly_generator::github;
 use dy_weekly_generator::weekly::WeeklyBuilder;
+use dy_weekly_generator::formal::Formal;
 
 #[macro_use]
 extern crate clap;
@@ -21,7 +20,7 @@ fn work() -> Result<(), Error> {
     let key = matches.value_of("key");
 
     let comments = github::fetch(repo, issue, key)?;
-    let mut weekly = WeeklyBuilder::new().build();
+    let mut weekly = WeeklyBuilder::new().add_extractor(Box::new(Formal::new())).build();
     for body in comments.iter() {
         weekly.parse(body)
     }

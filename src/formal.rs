@@ -1,18 +1,19 @@
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::prelude::*;
+use std::io;
 use std::mem;
 
 use yaml_rust::YamlLoader;
+use regex::Regex;
 
 use error::Error;
+use weekly::Extractor;
 
 enum EntryType {
     Draft,
     Topic,
 }
 
-pub struct Entry {
+struct Entry {
     name: String,
     kind: EntryType,
     link: Option<String>,
@@ -20,10 +21,6 @@ pub struct Entry {
     quote: Option<String>,
     cc: Vec<String>,
     // TODO: tag? keyword?
-}
-
-pub struct Weekly {
-    entries: HashMap<String, Entry>,
 }
 
 impl Entry {
@@ -106,7 +103,7 @@ impl Entry {
         self.cc.append(&mut other.cc);
     }
 
-    fn render(&self, file: &mut File) -> Result<(), Error> {
+    fn render(&self, file: &mut io::Write) -> Result<(), Error> {
         write!(file, "- ").map_err(|_| Error::IOErr)?;
         match self.link.as_ref() {
             Some(link) => write!(file, "[{}]({})", self.name, link).map_err(|_| Error::IOErr)?,
@@ -135,14 +132,18 @@ impl Entry {
     }
 }
 
-impl Weekly {
-    pub fn new() -> Weekly {
-        Weekly {
+pub struct Formal {
+    entries: HashMap<String, Entry>,
+}
+
+impl Formal {
+    pub fn new() -> Formal {
+        Formal {
             entries: HashMap::new(),
         }
     }
 
-    pub fn parse(&mut self, yaml: &str) {
+    fn parse(&mut self, yaml: &str) {
         let entry = Entry::parse(yaml);
         match entry {
             Some(e) => {
@@ -155,20 +156,33 @@ impl Weekly {
             None => {}
         }
     }
+}
 
-    pub fn render(&self, mut file: File) -> Result<(), Error> {
-        let header = r#"---
-layout: post
-title: Weekly
-category: Weekly
-author: 东岳
-
----
-
-"#;
-        write!(file, "{}", header).map_err(|_| Error::IOErr)?;
+impl Extractor for Formal {
+    fn extract(&mut self, comment: &str) -> bool {
+        let begin = Regex::new(r"```[:space:]*(yaml|yml)").unwrap();
+        let end = Regex::new(r"```").unwrap();
+        let mut entry = String::new();
+        let mut in_yaml = false;
+        let mut res = false;
+        for line in comment.lines() {
+            if begin.is_match(line) {
+                entry = String::new();
+                in_yaml = true;
+            } else if end.is_match(line) {
+                res = true;
+                self.parse(&entry);
+                in_yaml = false;
+            } else if in_yaml {
+                entry.push_str(line);
+                entry.push_str("\n");
+            }
+        }
+        res
+    }
+    fn render(&self, out: &mut io::Write) -> Result<(), Error> {
         for entry in self.entries.values() {
-            entry.render(&mut file)?;
+            entry.render(out)?;
         }
         Ok(())
     }

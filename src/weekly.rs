@@ -6,7 +6,7 @@ use error::Error;
 
 pub trait Extractor {
     fn extract(&mut self, &str) -> bool;
-    fn render(&self, &io::Write);
+    fn render(&self, &mut io::Write) -> Result<(), Error>;
 }
 
 pub struct WeeklyBuilder {
@@ -59,7 +59,7 @@ author: 东岳
 "#;
         write!(file, "{}", header).map_err(|_| Error::IOErr)?;
         for extractor in &self.extractors {
-            extractor.render(&file)
+            extractor.render(&mut file)?
         }
         Ok(())
     }
