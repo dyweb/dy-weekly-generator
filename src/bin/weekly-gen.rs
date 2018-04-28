@@ -20,15 +20,14 @@ fn work() -> Result<(), Error> {
     let issue = matches.value_of("issue").ok_or(Error::ConfigErr)?;
     let key = matches.value_of("key");
 
-    let comments = github::fetch(repo, issue, key)?;
     let mut weekly = WeeklyBuilder::new()
         .add_extractor(Box::new(Formal::new()))
         .add_extractor(Box::new(Casual::new()))
         .build();
-    for body in comments.iter() {
-        weekly.parse(body)
+    for body in github::fetch(repo, issue, key)? {
+        weekly.parse(&body);
     }
-    weekly.render(file)
+    weekly.render(file);
 }
 
 fn main() {

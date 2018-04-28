@@ -116,7 +116,7 @@ impl Entry {
         match self.quote.as_ref() {
             Some(quote) => {
                 for line in quote.lines() {
-                    write!(file, " > {}\n", line);
+                    write!(file, " > {}\n", line)?;
                 }
             }
             None => {}

@@ -10,17 +10,11 @@ use error::Error;
 
 const API_ROOT: &'static str = "https://api.github.com";
 
-pub struct Comments {
-    array: Vec<json::JsonValue>,
-}
-
-impl Comments {
-    pub fn iter(&self) -> impl Iterator<Item = &str> {
-        self.array.iter().flat_map(|c| c["body"].as_str())
-    }
-}
-
-pub fn fetch<'a>(repo: &str, issue: &str, key: Option<&str>) -> Result<Comments, Error> {
+pub fn fetch<'a>(
+    repo: &str,
+    issue: &str,
+    key: Option<&str>,
+) -> Result<impl Iterator<Item = String>, Error> {
     let client = Client::new();
     let url = format!("{}/repos/{}/issues/{}/comments", API_ROOT, repo, issue);
 
@@ -42,7 +36,12 @@ pub fn fetch<'a>(repo: &str, issue: &str, key: Option<&str>) -> Result<Comments,
         res.read_to_string(&mut content)?;
         let comments = json::parse(&content)?;
         match comments {
-            json::JsonValue::Array(cs) => Ok(Comments { array: cs }),
+            json::JsonValue::Array(cs) => {
+                Ok(cs.into_iter().flat_map(|mut c| match c["body"].take() {
+                    json::JsonValue::String(s) => Some(s),
+                    _ => None,
+                }))
+            }
             _ => Err(Error::JsonParseErr),
         }
     }
