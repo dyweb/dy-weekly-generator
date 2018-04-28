@@ -1,9 +1,9 @@
 extern crate dy_weekly_generator;
+use dy_weekly_generator::casual::Casual;
 use dy_weekly_generator::error::Error;
+use dy_weekly_generator::formal::Formal;
 use dy_weekly_generator::github;
 use dy_weekly_generator::weekly::WeeklyBuilder;
-use dy_weekly_generator::formal::Formal;
-use dy_weekly_generator::casual::Casual;
 
 #[macro_use]
 extern crate clap;
@@ -37,7 +37,7 @@ fn main() {
         Err(Error::RequestErr(e)) => println!("Error while sending request ({:?})", e),
         Err(Error::FetchErr) => println!("Error while fetching"),
         Err(Error::JsonParseErr) => println!("Invalid json"),
-        Err(Error::IOErr) => println!("Error while file operations"),
+        Err(Error::IOErr(e)) => println!("Error while file operations ({:?})", e),
         Ok(_) => {}
     };
 }

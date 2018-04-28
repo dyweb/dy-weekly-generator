@@ -28,7 +28,7 @@ impl Extractor for Casual {
     }
     fn render(&self, out: &mut io::Write) -> Result<(), Error> {
         for entry in &self.entries {
-            write!(out, "{}\n", entry).map_err(|_| Error::IOErr)?
+            write!(out, "{}\n", entry)?
         }
         Ok(())
     }

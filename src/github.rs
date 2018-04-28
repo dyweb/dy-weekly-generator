@@ -33,19 +33,14 @@ pub fn fetch<'a>(repo: &str, issue: &str, key: Option<&str>) -> Result<Comments,
         None => {}
     }
 
-    let mut res = client
-        .get(&url)
-        .headers(headers)
-        .send()
-        .map_err(|e| Error::RequestErr(e))?;
+    let mut res = client.get(&url).headers(headers).send()?;
 
     if res.status() != reqwest::StatusCode::Ok {
         Err(Error::FetchErr)
     } else {
         let mut content = String::new();
-        res.read_to_string(&mut content)
-            .map_err(|_| Error::FetchErr)?;
-        let comments = json::parse(&content).map_err(|_| Error::JsonParseErr)?;
+        res.read_to_string(&mut content)?;
+        let comments = json::parse(&content)?;
         match comments {
             json::JsonValue::Array(cs) => Ok(Comments { array: cs }),
             _ => Err(Error::JsonParseErr),

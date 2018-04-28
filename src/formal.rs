@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::io;
 use std::mem;
 
-use yaml_rust::YamlLoader;
 use regex::Regex;
+use yaml_rust::YamlLoader;
 
 use error::Error;
 use weekly::Extractor;
@@ -104,19 +104,19 @@ impl Entry {
     }
 
     fn render(&self, file: &mut io::Write) -> Result<(), Error> {
-        write!(file, "- ").map_err(|_| Error::IOErr)?;
+        write!(file, "- ")?;
         match self.link.as_ref() {
-            Some(link) => write!(file, "[{}]({})", self.name, link).map_err(|_| Error::IOErr)?,
-            None => write!(file, "{}", self.name).map_err(|_| Error::IOErr)?,
+            Some(link) => write!(file, "[{}]({})", self.name, link)?,
+            None => write!(file, "{}", self.name)?,
         }
         match self.description.as_ref() {
-            Some(desc) => write!(file, ", {}\n", desc).map_err(|_| Error::IOErr)?,
-            None => write!(file, "\n").map_err(|_| Error::IOErr)?,
+            Some(desc) => write!(file, ", {}\n", desc)?,
+            None => write!(file, "\n")?,
         }
         match self.quote.as_ref() {
             Some(quote) => {
                 for line in quote.lines() {
-                    write!(file, " > {}\n", line).map_err(|_| Error::IOErr)?;
+                    write!(file, " > {}\n", line);
                 }
             }
             None => {}
@@ -126,7 +126,7 @@ impl Entry {
                 .iter()
                 .map(|person| format!("[@{}](https://github.com/{})", person, person))
                 .collect();
-            write!(file, "{}\n", cc_list.join(", ")).map_err(|_| Error::IOErr)?;
+            write!(file, "{}\n", cc_list.join(", "))?;
         }
         Ok(())
     }

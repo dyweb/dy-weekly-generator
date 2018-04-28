@@ -47,7 +47,7 @@ impl Weekly {
     }
 
     pub fn render(&self, file: &str) -> Result<(), Error> {
-        let mut file = File::create(file).map_err(|_| Error::IOErr)?;
+        let mut file = File::create(file)?;
         let header = r#"---
 layout: post
 title: Weekly
@@ -57,7 +57,7 @@ author: 东岳
 ---
 
 "#;
-        write!(file, "{}", header).map_err(|_| Error::IOErr)?;
+        write!(file, "{}", header)?;
         for extractor in &self.extractors {
             extractor.render(&mut file)?
         }
