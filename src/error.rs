@@ -5,7 +5,7 @@ use std::io;
 pub enum Error {
     ConfigErr,
     RequestErr(reqwest::Error),
-    FetchErr,
+    FetchErr(reqwest::Response),
     JsonParseErr,
     IOErr(io::Error),
 }

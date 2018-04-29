@@ -32,7 +32,7 @@ fn main() {
     match work() {
         Err(Error::ConfigErr) => println!("Invalid arguments!"),
         Err(Error::RequestErr(e)) => println!("Error while sending request ({:?})", e),
-        Err(Error::FetchErr) => println!("Error while fetching"),
+        Err(Error::FetchErr(r)) => println!("Error while fetching ({:#?})", r),
         Err(Error::JsonParseErr) => println!("Invalid json"),
         Err(Error::IOErr(e)) => println!("Error while file operations ({:?})", e),
         Ok(_) => {}

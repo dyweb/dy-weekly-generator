@@ -30,7 +30,7 @@ pub fn fetch<'a>(
     let mut res = client.get(&url).headers(headers).send()?;
 
     if res.status() != reqwest::StatusCode::Ok {
-        Err(Error::FetchErr)
+        Err(Error::FetchErr(res))
     } else {
         let mut content = String::new();
         res.read_to_string(&mut content)?;
