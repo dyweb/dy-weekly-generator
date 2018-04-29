@@ -9,7 +9,6 @@ args:
       value_name: file
       help: The final weekly file
       takes_value: true
-      required: true
   - repo:
       short: r
       long: repo

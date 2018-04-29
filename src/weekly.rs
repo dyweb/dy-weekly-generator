@@ -1,6 +1,4 @@
-use std::fs::File;
 use std::io;
-use std::io::Write;
 
 use error::Error;
 
@@ -38,7 +36,6 @@ impl WeeklyBuilder {
 
 impl Weekly {
     pub fn parse(&mut self, comment: &str) {
-        println!("{}", comment); // dump comments for manual editing
         for extractor in &mut self.extractors {
             if extractor.extract(comment) {
                 break;
@@ -46,8 +43,7 @@ impl Weekly {
         }
     }
 
-    pub fn render(&self, file: &str) -> Result<(), Error> {
-        let mut file = File::create(file)?;
+    pub fn render(&self, out: &mut io::Write) -> Result<(), Error> {
         let header = r#"---
 layout: post
 title: Weekly
@@ -57,9 +53,9 @@ author: 东岳
 ---
 
 "#;
-        write!(file, "{}", header)?;
+        write!(out, "{}", header)?;
         for extractor in &self.extractors {
-            extractor.render(&mut file)?
+            extractor.render(out)?
         }
         Ok(())
     }
