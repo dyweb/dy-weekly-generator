@@ -30,7 +30,7 @@ impl Extractor for Casual {
     fn render(&self, out: &mut io::Write) -> Result<(), Error> {
         for entry in &self.entries {
             // Add a horizontal line between the entries.
-            write!(out, "{}\n***\n", entry)?
+            write!(out, "{}\n\n***\n\n", entry)?
         }
         Ok(())
     }
