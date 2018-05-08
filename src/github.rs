@@ -1,12 +1,12 @@
 use json;
 use reqwest;
-use reqwest::header::{qitem, Accept, Authorization, Headers, UserAgent, Link, RelationType};
+use reqwest::header::{qitem, Accept, Authorization, Headers, Link, RelationType, UserAgent};
 use reqwest::mime::Mime;
 use reqwest::Client;
 
 use std::io::Read;
-use std::vec;
 use std::mem;
+use std::vec;
 
 use error::Error;
 
@@ -25,17 +25,17 @@ impl<'a> Iterator for Comments<'a> {
     fn next(&mut self) -> Option<String> {
         loop {
             if let Some(s) = self.comments.next() {
-                return Some(s)
+                return Some(s);
             } else {
                 if let Some(url) = mem::replace(&mut self.next, None) {
                     if let Ok(page) = fetch_page(&self.client, &url, self.key) {
                         self.comments = page.comments;
                         self.next = page.next;
                     } else {
-                        return None
+                        return None;
                     }
                 } else {
-                    return None
+                    return None;
                 }
             }
         }
@@ -51,7 +51,7 @@ fn next_link(headers: &Headers) -> Option<&str> {
     let link: &Link = headers.get()?;
     for v in link.values() {
         if let Some(&[RelationType::Next]) = v.rel() {
-            return Some(v.link())
+            return Some(v.link());
         }
     }
     None
@@ -76,26 +76,23 @@ fn fetch_page(client: &Client, url: &str, key: Option<&str>) -> Result<Page, Err
         res.read_to_string(&mut content)?;
         let content = json::parse(&content)?;
         let comments = match content {
-            json::JsonValue::Array(cs) => {
-                Ok(cs.into_iter().flat_map(|mut c| match c["body"].take() {
+            json::JsonValue::Array(cs) => Ok(cs.into_iter()
+                .flat_map(|mut c| match c["body"].take() {
                     json::JsonValue::String(s) => Some(s),
                     _ => None,
-                }).collect::<Vec<_>>().into_iter())
-            }
+                })
+                .collect::<Vec<_>>()
+                .into_iter()),
             _ => Err(Error::JsonParseErr),
         }?;
         Ok(Page {
             comments: comments,
-            next: next_link(res.headers()).map(|s| s.to_owned())
+            next: next_link(res.headers()).map(|s| s.to_owned()),
         })
     }
 }
 
-pub fn fetch<'a>(
-    repo: &str,
-    issue: &str,
-    key: Option<&'a str>,
-) -> Result<Comments<'a>, Error> {
+pub fn fetch<'a>(repo: &str, issue: &str, key: Option<&'a str>) -> Result<Comments<'a>, Error> {
     let client = Client::new();
     let url = format!("{}/repos/{}/issues/{}/comments", API_ROOT, repo, issue);
     let page = fetch_page(&client, &url, key)?;
