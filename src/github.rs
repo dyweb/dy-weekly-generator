@@ -6,7 +6,6 @@ use reqwest::Client;
 
 use std::io::Read;
 use std::mem;
-use std::vec;
 
 use error::Error;
 
@@ -15,7 +14,7 @@ const API_ROOT: &'static str = "https://api.github.com";
 pub struct Comments<'a> {
     client: Client,
     key: Option<&'a str>,
-    comments: vec::IntoIter<String>,
+    comments: Box<Iterator<Item = String>>,
     next: Option<String>,
 }
 
@@ -43,15 +42,17 @@ impl<'a> Iterator for Comments<'a> {
 }
 
 struct Page {
-    comments: vec::IntoIter<String>,
+    comments: Box<Iterator<Item = String>>,
     next: Option<String>,
 }
 
 fn next_link(headers: &Headers) -> Option<&str> {
     let link: &Link = headers.get()?;
     for v in link.values() {
-        if let Some(&[RelationType::Next]) = v.rel() {
-            return Some(v.link());
+        if let Some(rel) = v.rel() {
+            if rel.contains(&RelationType::Next) {
+                return Some(v.link());
+            }
         }
     }
     None
@@ -76,13 +77,12 @@ fn fetch_page(client: &Client, url: &str, key: Option<&str>) -> Result<Page, Err
         res.read_to_string(&mut content)?;
         let content = json::parse(&content)?;
         let comments = match content {
-            json::JsonValue::Array(cs) => Ok(cs.into_iter()
-                .flat_map(|mut c| match c["body"].take() {
+            json::JsonValue::Array(cs) => Ok(Box::new(cs.into_iter().flat_map(|mut c| {
+                match c["body"].take() {
                     json::JsonValue::String(s) => Some(s),
                     _ => None,
-                })
-                .collect::<Vec<_>>()
-                .into_iter()),
+                }
+            }))),
             _ => Err(Error::JsonParseErr),
         }?;
         Ok(Page {
