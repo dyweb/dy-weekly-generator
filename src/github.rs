@@ -1,7 +1,7 @@
 use json;
+use regex::Regex;
 use reqwest;
-use reqwest::header::{qitem, Accept, Authorization, Headers, Link, RelationType, UserAgent};
-use reqwest::mime::Mime;
+use reqwest::header::{HeaderMap, ACCEPT, AUTHORIZATION, LINK, USER_AGENT};
 use reqwest::Client;
 
 use std::io::Read;
@@ -46,43 +46,40 @@ struct Page {
     next: Option<String>,
 }
 
-fn next_link(headers: &Headers) -> Option<&str> {
-    let link: &Link = headers.get()?;
-    for v in link.values() {
-        if let Some(rel) = v.rel() {
-            if rel.contains(&RelationType::Next) {
-                return Some(v.link());
-            }
-        }
-    }
-    None
+fn next_link(headers: &HeaderMap) -> Option<&str> {
+    let link = headers.get(LINK)?.to_str().ok()?;
+    let re = Regex::new(r#"<([^>]*)>; rel="next""#).unwrap();
+    Some(re.captures(link)?.get(1)?.as_str())
 }
 
 fn fetch_page(client: &Client, url: &str, key: Option<&str>) -> Result<Page, Error> {
-    let mut headers = Headers::new();
-    let accept_mime: Mime = "application/vnd.github.v3+json".parse().unwrap();
-    headers.set(Accept(vec![qitem(accept_mime)]));
-    headers.set(UserAgent::new("dy-weekly-generator/0.2.0".to_string()));
+    let mut headers = HeaderMap::new();
+    headers.insert(ACCEPT, "application/vnd.github.v3+json".parse().unwrap());
+    headers.insert(USER_AGENT, "dy-weekly-generator/0.2.0".parse().unwrap());
     match key {
-        Some(k) => headers.set(Authorization(format!("token {}", k))),
+        Some(k) => {
+            headers.insert(AUTHORIZATION, format!("token {}", k).parse().unwrap());
+        }
         None => {}
     }
 
     let mut res = client.get(url).headers(headers).send()?;
 
-    if res.status() != reqwest::StatusCode::Ok {
+    if res.status() != reqwest::StatusCode::OK {
         Err(Error::FetchErr(res))
     } else {
         let mut content = String::new();
         res.read_to_string(&mut content)?;
         let content = json::parse(&content)?;
         let comments = match content {
-            json::JsonValue::Array(cs) => Ok(Box::new(cs.into_iter().flat_map(|mut c| {
-                match c["body"].take() {
-                    json::JsonValue::String(s) => Some(s),
-                    _ => None,
-                }
-            }))),
+            json::JsonValue::Array(cs) => {
+                Ok(Box::new(cs.into_iter().flat_map(
+                    |mut c| match c["body"].take() {
+                        json::JsonValue::String(s) => Some(s),
+                        _ => None,
+                    },
+                )))
+            }
             _ => Err(Error::JsonParseErr),
         }?;
         Ok(Page {

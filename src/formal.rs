@@ -122,7 +122,8 @@ impl Entry {
             None => {}
         }
         if self.cc.len() > 0 {
-            let cc_list: Vec<_> = self.cc
+            let cc_list: Vec<_> = self
+                .cc
                 .iter()
                 .map(|person| format!("[@{}](https://github.com/{})", person, person))
                 .collect();
