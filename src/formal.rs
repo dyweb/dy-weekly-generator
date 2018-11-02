@@ -161,16 +161,18 @@ impl Formal {
 
 impl Extractor for Formal {
     fn extract(&mut self, comment: &str) -> bool {
-        let begin = Regex::new(r"```[:space:]*(yaml|yml)").unwrap();
-        let end = Regex::new(r"```").unwrap();
+        lazy_static! {
+            static ref BEGIN: Regex = Regex::new(r"```[:space:]*(yaml|yml)").unwrap();
+            static ref END: Regex = Regex::new(r"```").unwrap();
+        }
         let mut entry = String::new();
         let mut in_yaml = false;
         let mut res = false;
         for line in comment.lines() {
-            if begin.is_match(line) {
+            if BEGIN.is_match(line) {
                 entry = String::new();
                 in_yaml = true;
-            } else if end.is_match(line) {
+            } else if END.is_match(line) {
                 res = true;
                 self.parse(&entry);
                 in_yaml = false;

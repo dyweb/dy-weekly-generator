@@ -48,8 +48,10 @@ struct Page {
 
 fn next_link(headers: &HeaderMap) -> Option<&str> {
     let link = headers.get(LINK)?.to_str().ok()?;
-    let re = Regex::new(r#"<([^>]*)>; rel="next""#).unwrap();
-    Some(re.captures(link)?.get(1)?.as_str())
+    lazy_static! {
+        static ref NEXT: Regex = Regex::new(r#"<([^>]*)>; rel="next""#).unwrap();
+    }
+    Some(NEXT.captures(link)?.get(1)?.as_str())
 }
 
 fn fetch_page(client: &Client, url: &str, key: Option<&str>) -> Result<Page, Error> {
