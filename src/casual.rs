@@ -19,8 +19,10 @@ impl Casual {
 
 impl Extractor for Casual {
     fn extract(&mut self, comment: &str) -> bool {
-        let url_pattern = Regex::new(r"(((http://)|(https://)|(ftp://)|(www\.))([a-zA-Z0-9_\-]+\.)*[a-zA-Z0-9\-]+\.[a-zA-Z0-9\-]+)").unwrap();
-        let res = url_pattern.is_match(comment);
+        lazy_static! {
+            static ref URL_PATTERN: Regex = Regex::new(r"(((http://)|(https://)|(ftp://)|(www\.))([a-zA-Z0-9_\-]+\.)*[a-zA-Z0-9\-]+\.[a-zA-Z0-9\-]+)").unwrap();
+        }
+        let res = URL_PATTERN.is_match(comment);
         if res {
             self.entries.push(comment.to_owned())
         }
