@@ -1,6 +1,6 @@
 [package]
 name = "dy-weekly-generator"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["codeworm96 <codeworm96@outlook.com>"]
 
 [[bin]]
