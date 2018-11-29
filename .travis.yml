@@ -1,0 +1,57 @@
+# Based on the "trust" template v0.1.2
+# https://github.com/japaric/trust/tree/v0.1.2
+
+dist: trusty
+language: rust
+services: docker
+sudo: required
+
+env:
+  global:
+    - CRATE_NAME=dy-weekly-generator
+
+matrix:
+  include:
+    # Linux
+    - env: TARGET=x86_64-unknown-linux-gnu
+
+    # OSX
+    - env: TARGET=x86_64-apple-darwin
+      os: osx
+
+before_install:
+  - set -e
+  - rustup self update
+
+install:
+  - source ~/.cargo/env || true
+
+script:
+  - bash ci/script.sh
+
+after_script: set +e
+
+before_deploy:
+  - sh ci/before_deploy.sh
+
+deploy:
+  api_key:
+    secure: "okvpZgsc9tHlHiLsfhGaDxpllq0tYm3wdGSgBWfqKoSJ7E3qddF5fl0D2NgsmeYUJ1w6G6+Q9cWGtfXTzDb62XykQEZJyuXBkB9AGks/szzO1cdWhMF+tegzZJo2OtR666mXJ/0mP9nqUpjrShHNu3MTVTKy1tdty83OWpLGYRCpLyhRi5BPXXvowoqevN1Q3K4hANO/ZdPgHmVzL1gtQCzF3n3M1wcjtpj+LADjnuMjJYGlOkyMRn7DmsseAt+Zi2H05iXDM4mJKeQO3r2akRNqjD6OIfXX8ONF355cMc4EB4a0J8SUgIm0D2mzlt9Ebyb7kuyrm+5BGBr9/dv2d0G+07tvp5uddFLPMNOwdpNen5bjbpSz6duXCq+8ECBZlyfG0ENL5i3laGxTcPYGBLIdAtwzDbmo8phOtM/IyHm66SlgsGH3oWDBhNvMOiO+HObrXi6cILQJhx8QcBHY4O4/aL+IZGjvyNV30LyBkvyYxHoAw9P1aJMxS0QHqH7F40EJOLd4GDn8cyb0yGEtFDC8fOkEAvXUJXUw/Doar0CDMH2DLlAX0LtwJh5hgpq0TKcDFcnvhAkM7eeu5JAvW5+la6HflFMTVFxHBkDZoJS0gfXtoTu88DJBY8l0RTZZWnIrN+M2ZqzJn3adFRSUD+NyfWtHNJNWPyA2nnsk+Hs="
+  file_glob: true
+  file: $CRATE_NAME-$TRAVIS_TAG-$TARGET.*
+  on:
+    condition: $TRAVIS_RUST_VERSION = stable
+    tags: true
+  provider: releases
+  skip_cleanup: true
+
+cache: cargo
+before_cache:
+  # Travis can't cache files that are not readable by "others"
+  - chmod -R a+r $HOME/.cargo
+
+branches:
+  only:
+    # release tags
+    - /^v\d+\.\d+\.\d+.*$/
+    - master
