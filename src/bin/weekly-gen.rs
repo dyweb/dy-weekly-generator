@@ -1,16 +1,13 @@
-extern crate dy_weekly_generator;
+use std::fs::File;
+use std::io;
+
+use clap::{load_yaml, App};
+
 use dy_weekly_generator::casual::Casual;
 use dy_weekly_generator::error::Error;
 use dy_weekly_generator::formal::Formal;
 use dy_weekly_generator::github;
 use dy_weekly_generator::weekly::WeeklyBuilder;
-
-#[macro_use]
-extern crate clap;
-use clap::App;
-
-use std::fs::File;
-use std::io;
 
 fn work() -> Result<(), Error> {
     let yaml = load_yaml!("cli.yml");

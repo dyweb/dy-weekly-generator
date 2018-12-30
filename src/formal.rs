@@ -2,11 +2,12 @@ use std::collections::HashMap;
 use std::io;
 use std::mem;
 
+use lazy_static::lazy_static;
 use regex::Regex;
 use yaml_rust::YamlLoader;
 
-use error::Error;
-use weekly::Extractor;
+use crate::error::Error;
+use crate::weekly::Extractor;
 
 enum EntryType {
     Draft,
@@ -103,7 +104,7 @@ impl Entry {
         self.cc.append(&mut other.cc);
     }
 
-    fn render(&self, out: &mut io::Write) -> Result<(), Error> {
+    fn render(&self, out: &mut dyn io::Write) -> Result<(), Error> {
         write!(out, "- ")?;
         match self.link.as_ref() {
             Some(link) => write!(out, "[{}]({})", self.name, link)?,
@@ -184,7 +185,7 @@ impl Extractor for Formal {
         res
     }
 
-    fn render(&self, out: &mut io::Write) -> Result<(), Error> {
+    fn render(&self, out: &mut dyn io::Write) -> Result<(), Error> {
         for entry in self.entries.values() {
             entry.render(out)?;
         }
