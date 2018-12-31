@@ -1,20 +1,21 @@
+use std::io::Read;
+use std::mem;
+
 use json;
+use lazy_static::lazy_static;
 use regex::Regex;
 use reqwest;
 use reqwest::header::{HeaderMap, ACCEPT, AUTHORIZATION, LINK, USER_AGENT};
 use reqwest::Client;
 
-use std::io::Read;
-use std::mem;
-
-use error::Error;
+use crate::error::Error;
 
 const API_ROOT: &'static str = "https://api.github.com";
 
 pub struct Comments<'a> {
     client: Client,
     key: Option<&'a str>,
-    comments: Box<Iterator<Item = String>>,
+    comments: Box<dyn Iterator<Item = String>>,
     next: Option<String>,
 }
 
@@ -42,7 +43,7 @@ impl<'a> Iterator for Comments<'a> {
 }
 
 struct Page {
-    comments: Box<Iterator<Item = String>>,
+    comments: Box<dyn Iterator<Item = String>>,
     next: Option<String>,
 }
 

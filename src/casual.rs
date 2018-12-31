@@ -1,9 +1,10 @@
 use std::io;
 
+use lazy_static::lazy_static;
 use regex::Regex;
 
-use error::Error;
-use weekly::Extractor;
+use crate::error::Error;
+use crate::weekly::Extractor;
 
 pub struct Casual {
     entries: Vec<String>,
@@ -29,7 +30,7 @@ impl Extractor for Casual {
         res
     }
 
-    fn render(&self, out: &mut io::Write) -> Result<(), Error> {
+    fn render(&self, out: &mut dyn io::Write) -> Result<(), Error> {
         for entry in &self.entries {
             // Add a horizontal line between the entries.
             write!(out, "{}\n\n***\n\n", entry)?

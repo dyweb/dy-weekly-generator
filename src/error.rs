@@ -1,6 +1,7 @@
+use std::io;
+
 use json;
 use reqwest;
-use std::io;
 
 pub enum Error {
     ConfigErr,
