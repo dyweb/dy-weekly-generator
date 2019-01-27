@@ -44,15 +44,7 @@ impl Weekly {
     }
 
     pub fn render(&self, out: &mut dyn io::Write) -> Result<(), Error> {
-        let header = r#"---
-layout: post
-title: Weekly
-category: Weekly
-author: 东岳
-
----
-
-"#;
+        let header = include_str!("weekly_header.md");
         write!(out, "{}", header)?;
         for extractor in &self.extractors {
             extractor.render(out)?
