@@ -1,5 +1,4 @@
 name: dy-weekly-generator
-version: 0.3.1
 author: codeworm96 <codeworm96@outlook.com>
 about: Generates dy weekly
 args:
