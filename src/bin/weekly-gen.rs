@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io;
 
-use clap::{crate_version, load_yaml, App};
+use clap::{crate_version, App, Arg};
 
 use dy_weekly_generator::casual::Casual;
 use dy_weekly_generator::error::Error;
@@ -10,8 +10,45 @@ use dy_weekly_generator::github;
 use dy_weekly_generator::weekly::WeeklyBuilder;
 
 fn work() -> Result<(), Error> {
-    let yaml = load_yaml!("cli.yml");
-    let matches = App::from_yaml(yaml).version(crate_version!()).get_matches();
+    let matches = App::new("dy-weekly-generator")
+        .version(crate_version!())
+        .author("codeworm96 <codeworm96@outlook.com>")
+        .about("Generates dy weekly")
+        .arg(
+            Arg::with_name("file")
+                .short("o")
+                .long("output")
+                .value_name("file")
+                .help("The final weekly file")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("repo")
+                .short("r")
+                .long("repo")
+                .value_name("repo")
+                .help("The github repo, like 'dyweb/weekly'")
+                .takes_value(true)
+                .required(true),
+        )
+        .arg(
+            Arg::with_name("issue")
+                .short("i")
+                .long("issue")
+                .value_name("issue")
+                .help("The issue id")
+                .takes_value(true)
+                .required(true),
+        )
+        .arg(
+            Arg::with_name("key")
+                .short("k")
+                .long("key")
+                .value_name("key")
+                .help("The github api key")
+                .takes_value(true),
+        )
+        .get_matches();
 
     let file = matches.value_of("file");
     let repo = matches.value_of("repo").ok_or(Error::ConfigErr)?;
