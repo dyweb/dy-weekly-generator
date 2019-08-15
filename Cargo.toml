@@ -8,9 +8,9 @@ edition = "2018"
 name = "weekly-gen"
 
 [dependencies]
-clap = {version = "2", features = ["yaml"]}
+clap = "2.33"
 reqwest = "0.9"
 json = "0.11"
 yaml-rust = "0.4"
-regex = "1.1"
+regex = "1.2"
 lazy_static = "1.3"
