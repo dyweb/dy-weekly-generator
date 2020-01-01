@@ -5,8 +5,8 @@ use json;
 use lazy_static::lazy_static;
 use regex::Regex;
 use reqwest;
+use reqwest::blocking::Client;
 use reqwest::header::{HeaderMap, ACCEPT, AUTHORIZATION, LINK, USER_AGENT};
-use reqwest::Client;
 
 use crate::error::Error;
 
