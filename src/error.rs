@@ -6,7 +6,7 @@ use reqwest;
 pub enum Error {
     ConfigErr,
     RequestErr(reqwest::Error),
-    FetchErr(reqwest::Response),
+    FetchErr(reqwest::blocking::Response),
     JsonParseErr,
     IOErr(io::Error),
 }

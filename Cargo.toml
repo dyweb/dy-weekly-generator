@@ -9,7 +9,7 @@ name = "weekly-gen"
 
 [dependencies]
 clap = "2.33"
-reqwest = "0.9"
+reqwest = { version = "0.10", features = ["blocking"] }
 json = "0.12"
 yaml-rust = "0.4"
 regex = "1.3"
