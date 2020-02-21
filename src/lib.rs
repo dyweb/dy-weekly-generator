@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 pub mod casual;
 pub mod error;
 pub mod formal;
