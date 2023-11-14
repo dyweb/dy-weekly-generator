@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::io;
-use std::mem;
 
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -83,12 +82,12 @@ impl Entry {
     }
 
     fn field_append(a: &mut Option<String>, b: &mut Option<String>) {
-        match mem::replace(b, None) {
+        match b.take() {
             Some(s2) => {
                 if a.is_some() {
                     a.as_mut().map(|s1| s1.push_str(&s2));
                 } else {
-                    mem::replace(a, Some(s2));
+                    let _ = a.insert(s2);
                 }
             }
             None => {}
